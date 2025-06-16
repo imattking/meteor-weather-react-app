@@ -1,104 +1,75 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Form from '../components/Form';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun } from '@fortawesome/free-solid-svg-icons';
-import { faMoon } from '@fortawesome/free-solid-svg-icons';
-import { faCloud } from '@fortawesome/free-solid-svg-icons';
-import { faCloudRain } from '@fortawesome/free-solid-svg-icons';
-import { faCloudShowersHeavy } from '@fortawesome/free-solid-svg-icons';
-import { faCloudBolt } from '@fortawesome/free-solid-svg-icons';
-import { faSnowflake } from '@fortawesome/free-solid-svg-icons';
-import { faSmog } from '@fortawesome/free-solid-svg-icons';
+import WeatherIcon from '../components/WeatherIcon';
 import useGetLocation from '../util/hooks/useGetLocation';
 
 const App = () => {
 	const [darkMode, setDarkMode] = useState(
 		() => JSON.parse(localStorage.getItem('mode')) || false
 	);
-
-	React.useEffect(() => {
-		localStorage.setItem('mode', JSON.stringify(darkMode));
-	}, [darkMode]);
-
 	const [zip, setZip] = useState('30605');
-	const { weatherData, isLoading } = useGetLocation(zip);
+	const [display, setDisplay] = useState(false);
+	const [formData, setFormData] = useState({});
+	const { weatherData, loading, error } = useGetLocation(zip);
+
+	console.log(weatherData, loading, error);
 
 	const handleChange = (e) => {
 		const { value } = e.target;
-		setZip(value);
+		setFormData({ zipCode: value });
+		setDisplay(false);
 	};
-
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		if (zip.length !== 5) {
-			alert('Please enter 5 digit zip code');
-		} else {
-			//
-		}
+		setZip(formData.zipCode);
+		setDisplay(true);
 	};
+
+	useEffect(() => {
+		localStorage.setItem('mode', JSON.stringify(darkMode));
+	}, [darkMode]);
 
 	const toggle = () => {
 		setDarkMode((prevMode) => !prevMode);
 	};
 
-	// Set Weather Icon based on conditions
-
-	let date = new Date();
-	let hour = date.getHours();
-
-	let weatherIcon;
-	if (!weatherData) {
-		weatherIcon = '';
-	} else if (weatherData.conditions === 'Clear') {
-		if (hour && hour < 20 && hour > 6)
-			weatherIcon = <FontAwesomeIcon className="weather--icon" icon={faSun} />;
-		else {
-			weatherIcon = <FontAwesomeIcon className="weather--icon" icon={faMoon} />;
-		}
-	} else if (weatherData.conditions === 'Clouds') {
-		weatherIcon = <FontAwesomeIcon className="weather--icon" icon={faCloud} />;
-	} else if (weatherData.conditions === 'Drizzle') {
-		weatherIcon = (
-			<FontAwesomeIcon className="weather--icon" icon={faCloudRain} />
-		);
-	} else if (weatherData.conditions === 'Rain') {
-		weatherIcon = (
-			<FontAwesomeIcon className="weather--icon" icon={faCloudShowersHeavy} />
-		);
-	} else if (weatherData.conditions === 'Thunderstorm') {
-		weatherIcon = (
-			<FontAwesomeIcon className="weather--icon" icon={faCloudBolt} />
-		);
-	} else if (weatherData.conditions === 'Snow') {
-		weatherIcon = (
-			<FontAwesomeIcon className="weather--icon" icon={faSnowflake} />
-		);
-	} else {
-		weatherIcon = <FontAwesomeIcon className="weather--icon" icon={faSmog} />;
-	}
-
 	return (
 		<>
 			<div className={darkMode ? 'container dark' : 'container'}>
+				{/* DarkMode Toggle */}
 				<Navbar darkMode={darkMode} toggle={toggle} />
+
+				{/* User Input Form */}
 				<Form
 					darkMode={darkMode}
 					handleChange={handleChange}
 					handleSubmit={handleSubmit}
 					value={zip}
 				/>
-				{isLoading && (
+
+				{/* Loading Indication */}
+				{display && loading && (
 					<div>
 						<h2>Loading...</h2>
 					</div>
 				)}
-				{!isLoading /*display*/ && (
+
+				{/* Weather Location Data Results */}
+				{display && error && (
+					<div>
+						<h2>Invalid Zip Code</h2>
+					</div>
+				)}
+
+				{display && !loading && !error && (
 					<div className="results">
 						<h2 className="weather--location">{weatherData.location} </h2>
 						<div className="results--wrapper">
 							<div className="conditions--wrapper">
-								{!weatherData.code && weatherIcon}
+								{!error && (
+									<WeatherIcon weatherData={weatherData} error={error} />
+								)}
 								<p className="weather--conditions">
 									{!weatherData.code && weatherData.conditions}
 								</p>
